@@ -1,14 +1,8 @@
 from database.db_connection import DB_connection
-from pydantic import BaseModel
-from database.agent_db import agent
+# from pydantic import BaseModel
+# from database.agent_db import agent
 
 
-class Create_Mission(BaseModel):
-    title : str
-    description : str
-    location : str
-    difficulty : int
-    importance : int
 
 def calculating_urgency_level(num):
     if num < 10:
@@ -27,14 +21,14 @@ def calculating_urgency_level(num):
 class MissionDB:
     def __init__(self):
         self.db = DB_connection()
-    def create_mission(self,data:Create_Mission):
+    def create_mission(self,data:dict):
         conn = self.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cal_risk_level = data.difficulty*2+data.importance
+            cal_risk_level = data['difficulty']*2+data['importance']
             result_level = calculating_urgency_level(cal_risk_level)
             sql_q = """INSERT INTO missions(title, description , location, difficulty, importance, risk_level) VALUES(%s, %s, %s, %s, %s, %s)"""
-            values =  [data.title,data.description,data.location,data.difficulty,data.importance,result_level]
+            values =  [data['title'],data['description'],data['location'],data['difficulty'],data['importance'],result_level]
             cursor.execute(sql_q,values)
             conn.commit()
             return self.get_mission_by_id(cursor.lastrowid)
@@ -65,44 +59,38 @@ class MissionDB:
 
 
     def assign_mission(self,m_id:int, a_id:int):
-        agent_data = agent.get_agent_by_id(a_id)
-        mission_data = self.get_mission_by_id(m_id)
-        if not agent_data.get("is_active"):
-            raise "Inactive agent"
-        if mission_data.get("status") != "NEW":
-            raise "Cannot associate a mission that is not new."
-        if len(self.get_open_missions_by_agent(a_id)) >=3:
-            raise "You cannot assign more than 3 missions to an agent."
-        if mission_data.get("risk_level") == "CRITICAL":
-            if agent_data.get("agent_rank") != "Commander":
-                raise "Only a Commander-level agent can handle such a request."
         conn = self.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("UPDATE missions SET assigned_agent_id = %s ,status = 'ASSIGNED' WHERE id = %s",(a_id,m_id))
             conn.commit()
-            return "updated successfully"
+            return {"message":"updated successfully"}
         finally:
             cursor.close()
             conn.close()
 
-    def update_mission_status(self,id:int,status):
+    def update_mission_status(self,id:int,status:str):
         mission_data = self.get_mission_by_id(id)
+        print(3)
         if status == "IN_PROGRESS":
+            print(4)
             if mission_data.get("status") != "ASSIGNED" :
-                raise "Cannot start a task that is not in an associated status."
-        if status == "COMPLETED" or status == "FAILED":
+                print(5)
+                return "Cannot start a task that is not in an associated status."
+        elif status in ["COMPLETED", "FAILED"]:
             if mission_data.get("status") != "IN_PROGRESS" :
-                raise "It is not possible to close a mission that was not in progress status."
-        if status == "CANCELLED":
+                return "It is not possible to close a mission that was not in progress status."
+        elif status == "CANCELLED":
             if mission_data.get("status") not in ["NEW","ASSIGNED"]:
-                raise "Only missions with status NEW or ASSIGNED can be canceled."
+                return "Only missions with status NEW or ASSIGNED can be canceled."
         conn = self.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
+            print(6)
             cursor.execute("UPDATE missions SET status = %s WHERE id = %s",(status,id))
+            print(7)
             conn.commit()
-            return "updated successfully"
+            return {"message":"updated successfully"}
         finally:
             cursor.close()
             conn.close()
@@ -165,7 +153,7 @@ class MissionDB:
 
     def get_top_agent(self):
         conn = self.db.get_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM agents ORDER BY completed_missions DESC LIMIT 1")
             return cursor.fetchone()
