@@ -82,4 +82,52 @@ Intelligence_db
 
 
 
+-----------------------------------------------------------
+
+# Part 2
+
+
+##  File structure Updated
+
+
+    intelligence-task-manager/
+            ├── main.py
+            ├── database/ (Since yesterday)
+            ├── routes/
+            │ ├── agent_routes.py
+            │ ├── mission_routes.py
+            │ └── report_routes.py
+            ├── logs/
+            │  ├── app.log
+            |  └── config_logger.py
+            ├── README.md 
+            └── requirements.txt (Updated)
+
+
+
+#
+
+
+
+
+**Agents endpoints**
+
+![alt text](/image_for_readme/Agents%20endpoints_image.png)
+
+#
+
+**Missions endpoints**
+
+![alt text](/image_for_readme/Missions%20endpoints_image.png)
+
+#
+
+**Reports endpoints**
+
+![alt text](/image_for_readme/Reports%20endpoints_image.png)
+
+
+#
+
+
 
