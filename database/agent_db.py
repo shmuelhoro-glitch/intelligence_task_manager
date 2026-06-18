@@ -64,7 +64,10 @@ class AgentDB:
             sql_q = f"""UPDATE agents SET {key_with_change} WHERE id = %s"""
             cursor.execute(sql_q,values)
             conn.commit()
-            return "updated successfully"
+            if cursor.rowcount > 0 :
+                return "updated successfully"
+            else:
+                return "There is nothing new in what you sent."
         finally:
             cursor.close()
             conn.close()
