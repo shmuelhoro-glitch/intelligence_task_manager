@@ -1,6 +1,6 @@
 from database.db_connection import DB_connection
 from pydantic import BaseModel
-from agent_db import agent
+from database.agent_db import agent
 
 
 class Create_Mission(BaseModel):
@@ -34,10 +34,10 @@ class MissionDB:
             cal_risk_level = data.difficulty*2+data.importance
             result_level = calculating_urgency_level(cal_risk_level)
             sql_q = """INSERT INTO missions(title, description , location, difficulty, importance, risk_level) VALUES(%s, %s, %s, %s, %s, %s)"""
-            values =  list(data.title,data.description,data.location,data.difficulty,data.importance,result_level)
+            values =  [data.title,data.description,data.location,data.difficulty,data.importance,result_level]
             cursor.execute(sql_q,values)
             conn.commit()
-            return cursor.fetchall()
+            return self.get_mission_by_id(cursor.lastrowid)
         finally:
             cursor.close()
             conn.close()
@@ -111,7 +111,7 @@ class MissionDB:
         conn = self.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            cursor.execute("SELECT * FROM missions WHERE id = %s AND status = 'ASSIGNED' OR status = 'IN_PROGRESS'",(id,))
+            cursor.execute("SELECT * FROM missions WHERE id = %s AND status IN ('ASSIGNED', 'IN_PROGRESS')",(id,))
             return cursor.fetchall()
         finally:
             cursor.close()
@@ -135,7 +135,7 @@ class MissionDB:
         conn = self.db.get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT COUNT(*) FROM missions WHERE status = %s",(status))
+            cursor.execute("SELECT COUNT(*) FROM missions WHERE status = %s",(status,))
             return cursor.fetchone()
         finally:
             cursor.close()
@@ -146,7 +146,7 @@ class MissionDB:
         conn = self.db.get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT COUNT(*) FROM missions WHERE status = 'NEW' OR 'ASSIGNED' OR 'IN_PROGRESS'")
+            cursor.execute("SELECT COUNT(*) FROM missions WHERE status IN ('NEW', 'ASSIGNED', 'IN_PROGRESS')")
             return cursor.fetchone()
         finally:
             cursor.close()
@@ -167,7 +167,7 @@ class MissionDB:
         conn = self.db.get_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("SELECT MAX(completed_missions) FROM agents")
+            cursor.execute("SELECT * FROM agents ORDER BY completed_missions DESC LIMIT 1")
             return cursor.fetchone()
         finally:
             cursor.close()
@@ -175,3 +175,4 @@ class MissionDB:
 
 
 
+mission = MissionDB()

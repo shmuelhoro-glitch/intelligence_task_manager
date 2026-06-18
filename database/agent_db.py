@@ -1,6 +1,6 @@
-from db_connection import DB_connection
+from database.db_connection import DB_connection
 from pydantic import BaseModel
-import math
+
 
 
 class Create_Agent(BaseModel):
@@ -18,16 +18,15 @@ class Update_Agent(BaseModel):
 class AgentDB:
     def __init__(self):
         self.db = DB_connection()
-    def create_agent(self,data:Create_Agent):
+    def create_agent(self,data:dict):
         conn = self.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            new_data = data.model_dump()
             sql_q = """INSERT INTO agents(name, specialty, agent_rank) VALUES(%s, %s, %s)"""
-            values =  list(new_data.values)
+            values =  list(data.values())
             cursor.execute(sql_q,values)
             conn.commit()
-            return cursor.fetchall()
+            return self.get_agent_by_id(cursor.lastrowid)
         finally:
             cursor.close()
             conn.close()
@@ -59,7 +58,7 @@ class AgentDB:
         conn = self.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            dict_data = data.model_dump()
+            dict_data = data.model_dump(exclude_unset=True)
             key_with_change = ", ".join(f"{key} = %s "for key in dict_data)
             values = list(dict_data.values()) + [id]
             sql_q = f"""UPDATE agents SET {key_with_change} WHERE id = %s"""
@@ -118,7 +117,7 @@ class AgentDB:
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM agents WHERE id = %s ",(id,))
-            data = cursor.fetchall()
+            data = cursor.fetchone()
             
             completed = int(data["completed_missions"])
             failed = int(data["failed_missions"])
