@@ -53,7 +53,8 @@ def get_agent_by_id(id:int):
 @router.put("/{id}")
 def update_agent(id:int,data_for_update:Update_Agent):
     check_exists_agent(id)
-    return agent.update_agent(id,data_for_update)
+    data = data_for_update.model_dump(exclude_unset=True)
+    return agent.update_agent(id,data)
 
 
 @router.put('/{id}/deactivate')

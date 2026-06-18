@@ -1,8 +1,9 @@
 .venv 
+database/__pycache__
+routes/__pycache__
+*/__pycache__
 __pycache__
-database/
-    __pycache__
-    
+
 
 
 

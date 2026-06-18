@@ -1,6 +1,6 @@
 from database.db_connection import DB_connection
 # from pydantic import BaseModel
-# from database.agent_db import agent
+from database.agent_db import agent
 
 
 
@@ -70,25 +70,11 @@ class MissionDB:
             conn.close()
 
     def update_mission_status(self,id:int,status:str):
-        mission_data = self.get_mission_by_id(id)
-        print(3)
-        if status == "IN_PROGRESS":
-            print(4)
-            if mission_data.get("status") != "ASSIGNED" :
-                print(5)
-                return "Cannot start a task that is not in an associated status."
-        elif status in ["COMPLETED", "FAILED"]:
-            if mission_data.get("status") != "IN_PROGRESS" :
-                return "It is not possible to close a mission that was not in progress status."
-        elif status == "CANCELLED":
-            if mission_data.get("status") not in ["NEW","ASSIGNED"]:
-                return "Only missions with status NEW or ASSIGNED can be canceled."
         conn = self.db.get_connection()
         cursor = conn.cursor(dictionary=True)
         try:
-            print(6)
             cursor.execute("UPDATE missions SET status = %s WHERE id = %s",(status,id))
-            print(7)
+            
             conn.commit()
             return {"message":"updated successfully"}
         finally:

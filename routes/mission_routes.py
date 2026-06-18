@@ -60,18 +60,21 @@ def assign_mission(id:int,agent_id:int):
 @router.put("/{id}/start")
 def start_mission(id:int):
     mission_data = mission.get_mission_by_id(id)
-    print(1)
     if mission_data is None:
         raise HTTPException(404,"Mission not available")
     if mission_data.get("status") != "ASSIGNED":
         raise HTTPException(400,"cant change")
-    print(2)
     return mission.update_mission_status(id,"IN_PROGRESS")
 
 
 @router.put("/{id}/complete")
 def complete_mission(id:int):
-    check_mission_exists(id)
+    mission_data = mission.get_mission_by_id(id)
+    if mission == None:
+        raise HTTPException(404,"Mission not available")
+    if mission_data.get("status") != "IN_PROGRESS":
+        raise HTTPException(400)
+    agent.increment_completed(mission_data.get("assigned_agent_id"))
     return mission.update_mission_status(id,"COMPLETED")
 
 @router.put("/{id}/fail")
@@ -79,12 +82,16 @@ def fail_mission(id:int):
     data_mission = get_mission_by_id(id)
     if data_mission.get("status") != "IN_PROGRESS":
         raise HTTPException(400,{"message":"Just a task that was in_progress"})
+    agent.increment_failed(data_mission.get("assigned_agent_id"))
     return mission.update_mission_status(id,"FAILED")
 
 
 
 @router.put("/{id}/cancel")
 def cancel_mission(id:int):
-    check_mission_exists(id)
+    data_mission = get_mission_by_id(id)
+    if data_mission.get("status") not in ["NEW","ASSIGNED"]:
+        raise HTTPException(400)
     return mission.update_mission_status(id,"CANCELLED")
+    
 
